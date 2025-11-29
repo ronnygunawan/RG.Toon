@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace RG.Toon.Tests;
 
 public class ToonSerializerTests
