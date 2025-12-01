@@ -592,4 +592,103 @@ public class ToonSerializerTests
     }
 
     #endregion
+
+    #region Validation Tests
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    public void Serialize_WithInvalidIndentSize_ThrowsArgumentOutOfRangeException(int indentSize)
+    {
+        var obj = new { Name = "Test" };
+        Should.Throw<ArgumentOutOfRangeException>(() => ToonSerializer.Serialize(obj, indentSize));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    public void SerializeGeneric_WithInvalidIndentSize_ThrowsArgumentOutOfRangeException(int indentSize)
+    {
+        var obj = new SimpleObject { Id = 1, Name = "Test", Active = true };
+        Should.Throw<ArgumentOutOfRangeException>(() => ToonSerializer.Serialize<SimpleObject>(obj, indentSize));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    public void Deserialize_WithInvalidIndentSize_ThrowsArgumentOutOfRangeException(int indentSize)
+    {
+        var toon = "Name: Test";
+        Should.Throw<ArgumentOutOfRangeException>(() => ToonSerializer.Deserialize<SimpleObject>(toon, indentSize));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    public void DeserializeWithType_WithInvalidIndentSize_ThrowsArgumentOutOfRangeException(int indentSize)
+    {
+        var toon = "Name: Test";
+        Should.Throw<ArgumentOutOfRangeException>(() => ToonSerializer.Deserialize(toon, typeof(SimpleObject), indentSize));
+    }
+
+    #endregion
+
+    #region Field List Format Tests
+
+    [Fact]
+    public void Serialize_TabularArray_NoNewlineBetweenBraces()
+    {
+        var items = new[]
+        {
+            new TabularItem { Sku = "A1", Qty = 2, Price = 9.99m },
+            new TabularItem { Sku = "B2", Qty = 1, Price = 14.5m }
+        };
+        var result = ToonSerializer.Serialize(items);
+        
+        // Ensure field list is on single line with no newlines between { and }
+        result.ShouldContain("{Sku,Qty,Price}:");
+        result.ShouldNotContain("{\n");
+        result.ShouldNotContain("\n}");
+    }
+
+    [Fact]
+    public void Serialize_ObjectWithTabularArray_NoNewlineBetweenBraces()
+    {
+        var obj = new
+        {
+            Items = new[]
+            {
+                new TabularItem { Sku = "A1", Qty = 2, Price = 9.99m },
+                new TabularItem { Sku = "B2", Qty = 1, Price = 14.5m }
+            }
+        };
+        var result = ToonSerializer.Serialize(obj);
+        
+        // Ensure field list is on single line with no newlines between { and }
+        result.ShouldContain("{Sku,Qty,Price}:");
+        result.ShouldNotContain("{\n");
+        result.ShouldNotContain("\n}");
+    }
+
+    [Fact]
+    public void Serialize_TabularArrayWithManyFields_NoNewlineBetweenBraces()
+    {
+        var hikes = new[]
+        {
+            new HikeInfo { Id = 1, Name = "Blue Lake Trail", DistanceKm = 7.5, ElevationGain = 320, Companion = "ana", WasSunny = true },
+            new HikeInfo { Id = 2, Name = "Ridge Overlook", DistanceKm = 9.2, ElevationGain = 540, Companion = "luis", WasSunny = false }
+        };
+        var result = ToonSerializer.Serialize(hikes);
+        
+        // Ensure field list with many fields is still on single line
+        result.ShouldContain("{Id,Name,DistanceKm,ElevationGain,Companion,WasSunny}:");
+        result.ShouldNotContain("{\n");
+        result.ShouldNotContain("\n}");
+    }
+
+    #endregion
 }

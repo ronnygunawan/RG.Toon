@@ -23,6 +23,14 @@ public static partial class ToonSerializer
     // Pattern for unquoted keys
     private static readonly Regex UnquotedKeyPattern = UnquotedKeyPatternRegex();
 
+    private static void ValidateIndentSize(int indentSize)
+    {
+        if (indentSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(indentSize), indentSize, "Indent size must be greater than zero.");
+        }
+    }
+
     /// <summary>
     /// Serializes the specified object to a TOON string.
     /// </summary>
@@ -32,6 +40,7 @@ public static partial class ToonSerializer
     /// <returns>A TOON formatted string representation of the object.</returns>
     public static string Serialize<T>(T value, int indentSize = DefaultIndentSize)
     {
+        ValidateIndentSize(indentSize);
         return Serialize((object?)value, indentSize);
     }
 
@@ -43,6 +52,8 @@ public static partial class ToonSerializer
     /// <returns>A TOON formatted string representation of the object.</returns>
     public static string Serialize(object? value, int indentSize = DefaultIndentSize)
     {
+        ValidateIndentSize(indentSize);
+
         if (value is null)
         {
             return "null";
@@ -62,6 +73,7 @@ public static partial class ToonSerializer
     /// <returns>The deserialized object.</returns>
     public static T? Deserialize<T>(string toon, int indentSize = DefaultIndentSize)
     {
+        ValidateIndentSize(indentSize);
         return (T?)Deserialize(toon, typeof(T), indentSize);
     }
 
@@ -74,6 +86,8 @@ public static partial class ToonSerializer
     /// <returns>The deserialized object.</returns>
     public static object? Deserialize(string toon, Type type, int indentSize = DefaultIndentSize)
     {
+        ValidateIndentSize(indentSize);
+
         if (string.IsNullOrEmpty(toon))
         {
             return type.IsValueType ? Activator.CreateInstance(type) : null;
