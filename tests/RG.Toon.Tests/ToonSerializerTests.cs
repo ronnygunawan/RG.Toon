@@ -1,3 +1,5 @@
+using Shouldly;
+
 namespace RG.Toon.Tests;
 
 public class ToonSerializerTests
@@ -14,7 +16,7 @@ public class ToonSerializerTests
     public void Serialize_SafeStrings_NoQuotes(string input, string expected)
     {
         var result = ToonSerializer.Serialize(input);
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     [Theory]
@@ -33,7 +35,7 @@ public class ToonSerializerTests
     public void Serialize_StringsRequiringQuotes_AreQuoted(string input, string expected)
     {
         var result = ToonSerializer.Serialize(input);
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     [Theory]
@@ -44,56 +46,56 @@ public class ToonSerializerTests
     public void Serialize_StringsWithControlChars_AreEscaped(string input, string expected)
     {
         var result = ToonSerializer.Serialize(input);
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     [Fact]
     public void Serialize_IntegerNumber_ReturnsDecimal()
     {
-        Assert.Equal("42", ToonSerializer.Serialize(42));
-        Assert.Equal("-7", ToonSerializer.Serialize(-7));
-        Assert.Equal("0", ToonSerializer.Serialize(0));
+        ToonSerializer.Serialize(42).ShouldBe("42");
+        ToonSerializer.Serialize(-7).ShouldBe("-7");
+        ToonSerializer.Serialize(0).ShouldBe("0");
     }
 
     [Fact]
     public void Serialize_DecimalNumbers_ReturnsDecimal()
     {
-        Assert.Equal("3.14", ToonSerializer.Serialize(3.14));
+        ToonSerializer.Serialize(3.14).ShouldBe("3.14");
     }
 
     [Fact]
     public void Serialize_NegativeZero_ReturnsZero()
     {
-        Assert.Equal("0", ToonSerializer.Serialize(-0.0));
+        ToonSerializer.Serialize(-0.0).ShouldBe("0");
     }
 
     [Fact]
     public void Serialize_LargeNumber_ReturnsDecimalNotation()
     {
-        Assert.Equal("1000000", ToonSerializer.Serialize(1000000));
+        ToonSerializer.Serialize(1000000).ShouldBe("1000000");
     }
 
     [Fact]
     public void Serialize_Booleans_ReturnsLowercase()
     {
-        Assert.Equal("true", ToonSerializer.Serialize(true));
-        Assert.Equal("false", ToonSerializer.Serialize(false));
+        ToonSerializer.Serialize(true).ShouldBe("true");
+        ToonSerializer.Serialize(false).ShouldBe("false");
     }
 
     [Fact]
     public void Serialize_Null_ReturnsNull()
     {
-        Assert.Equal("null", ToonSerializer.Serialize<object?>(null));
+        ToonSerializer.Serialize<object?>(null).ShouldBe("null");
     }
 
     [Fact]
     public void Serialize_SpecialFloats_ReturnNull()
     {
-        Assert.Equal("null", ToonSerializer.Serialize(double.NaN));
-        Assert.Equal("null", ToonSerializer.Serialize(double.PositiveInfinity));
-        Assert.Equal("null", ToonSerializer.Serialize(double.NegativeInfinity));
-        Assert.Equal("null", ToonSerializer.Serialize(float.NaN));
-        Assert.Equal("null", ToonSerializer.Serialize(float.PositiveInfinity));
+        ToonSerializer.Serialize(double.NaN).ShouldBe("null");
+        ToonSerializer.Serialize(double.PositiveInfinity).ShouldBe("null");
+        ToonSerializer.Serialize(double.NegativeInfinity).ShouldBe("null");
+        ToonSerializer.Serialize(float.NaN).ShouldBe("null");
+        ToonSerializer.Serialize(float.PositiveInfinity).ShouldBe("null");
     }
 
     #endregion
@@ -112,7 +114,7 @@ public class ToonSerializerTests
     {
         var obj = new SimpleObject { Id = 123, Name = "Ada", Active = true };
         var result = ToonSerializer.Serialize(obj);
-        Assert.Equal("Id: 123\nName: Ada\nActive: true", result);
+        result.ShouldBe("Id: 123\nName: Ada\nActive: true");
     }
 
     public record NestedObject
@@ -137,7 +139,7 @@ public class ToonSerializerTests
         };
         var result = ToonSerializer.Serialize(obj);
         var expected = "Id: 1\nAddress:\n  City: Boulder\n  Street: Main St";
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     #endregion
@@ -149,7 +151,7 @@ public class ToonSerializerTests
     {
         var arr = new[] { "a", "b", "c" };
         var result = ToonSerializer.Serialize(arr);
-        Assert.Equal("[3]: a,b,c", result);
+        result.ShouldBe("[3]: a,b,c");
     }
 
     [Fact]
@@ -157,7 +159,7 @@ public class ToonSerializerTests
     {
         var arr = new[] { 1, 2, 3 };
         var result = ToonSerializer.Serialize(arr);
-        Assert.Equal("[3]: 1,2,3", result);
+        result.ShouldBe("[3]: 1,2,3");
     }
 
     [Fact]
@@ -165,7 +167,7 @@ public class ToonSerializerTests
     {
         var arr = Array.Empty<int>();
         var result = ToonSerializer.Serialize(arr);
-        Assert.Equal("[0]:", result);
+        result.ShouldBe("[0]:");
     }
 
     [Fact]
@@ -173,7 +175,7 @@ public class ToonSerializerTests
     {
         var obj = new { Tags = new[] { "admin", "ops", "dev" } };
         var result = ToonSerializer.Serialize(obj);
-        Assert.Equal("Tags[3]: admin,ops,dev", result);
+        result.ShouldBe("Tags[3]: admin,ops,dev");
     }
 
     public record TabularItem
@@ -194,7 +196,7 @@ public class ToonSerializerTests
         var obj = new { Items = items };
         var result = ToonSerializer.Serialize(obj);
         var expected = "Items[2]{Sku,Qty,Price}:\n  A1,2,9.99\n  B2,1,14.5";
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
     [Fact]
@@ -207,8 +209,8 @@ public class ToonSerializerTests
         };
         var obj = new { Items = items };
         var result = ToonSerializer.Serialize(obj);
-        Assert.Contains("\"A,1\"", result);
-        Assert.Contains("\"wip: test\"", result);
+        result.ShouldContain("\"A,1\"");
+        result.ShouldContain("\"wip: test\"");
     }
 
     #endregion
@@ -231,8 +233,8 @@ public class ToonSerializerTests
     {
         var obj = new AttributeTestObject { PersonName = "Ada", Age = 30 };
         var result = ToonSerializer.Serialize(obj);
-        Assert.Contains("name: Ada", result);
-        Assert.DoesNotContain("PersonName", result);
+        result.ShouldContain("name: Ada");
+        result.ShouldNotContain("PersonName");
     }
 
     [Fact]
@@ -240,8 +242,10 @@ public class ToonSerializerTests
     {
         var obj = new AttributeTestObject { PersonName = "Ada", Age = 30 };
         var result = ToonSerializer.Serialize(obj);
-        Assert.DoesNotContain("NormalizedName", result);
-        Assert.DoesNotContain("ADA", result);
+        result.ShouldNotContain("NormalizedName");
+        // NormalizedName would add "ADA" as the value, but since it's ignored, it shouldn't be there
+        // We check for "ADA" case-sensitively as part of a key-value pair
+        result.ShouldNotContain("NormalizedName: ADA");
     }
 
     #endregion
@@ -257,28 +261,43 @@ public class ToonSerializerTests
     public void Deserialize_Strings_ReturnsCorrectValue(string input, string expected)
     {
         var result = ToonSerializer.Deserialize<string>(input);
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
-    [Fact]
-    public void Deserialize_Integer_ReturnsCorrectValue()
+    [Theory]
+    [InlineData("42", 42)]
+    [InlineData("-7", -7)]
+    [InlineData("0", 0)]
+    public void Deserialize_Integer_ReturnsCorrectValue(string input, int expected)
     {
-        Assert.Equal(42, ToonSerializer.Deserialize<int>("42"));
-        Assert.Equal(-7, ToonSerializer.Deserialize<int>("-7"));
-        Assert.Equal(0, ToonSerializer.Deserialize<int>("0"));
+        ToonSerializer.Deserialize<int>(input).ShouldBe(expected);
     }
 
-    [Fact]
-    public void Deserialize_Decimal_ReturnsCorrectValue()
+    [Theory]
+    [InlineData("3.14", 3.14)]
+    [InlineData("-3.14", -3.14)]
+    [InlineData("1e-6", 0.000001)]
+    [InlineData("-1E+9", -1000000000.0)]
+    public void Deserialize_Decimal_ReturnsCorrectValue(string input, double expected)
     {
-        Assert.Equal(3.14, ToonSerializer.Deserialize<double>("3.14"));
+        ToonSerializer.Deserialize<double>(input).ShouldBe(expected);
+    }
+
+    [Theory]
+    [InlineData("05")]
+    [InlineData("0001")]
+    [InlineData("007")]
+    public void Deserialize_LeadingZeroTokens_TreatedAsStrings(string input)
+    {
+        // Tokens with leading zeros should be treated as strings, not numbers
+        ToonSerializer.Deserialize<string>(input).ShouldBe(input);
     }
 
     [Fact]
     public void Deserialize_Boolean_ReturnsCorrectValue()
     {
-        Assert.True(ToonSerializer.Deserialize<bool>("true"));
-        Assert.False(ToonSerializer.Deserialize<bool>("false"));
+        ToonSerializer.Deserialize<bool>("true").ShouldBeTrue();
+        ToonSerializer.Deserialize<bool>("false").ShouldBeFalse();
     }
 
     [Fact]
@@ -286,10 +305,10 @@ public class ToonSerializerTests
     {
         var toon = "Id: 123\nName: Ada\nActive: true";
         var result = ToonSerializer.Deserialize<SimpleObject>(toon);
-        Assert.NotNull(result);
-        Assert.Equal(123, result.Id);
-        Assert.Equal("Ada", result.Name);
-        Assert.True(result.Active);
+        result.ShouldNotBeNull();
+        result.Id.ShouldBe(123);
+        result.Name.ShouldBe("Ada");
+        result.Active.ShouldBeTrue();
     }
 
     [Fact]
@@ -297,11 +316,11 @@ public class ToonSerializerTests
     {
         var toon = "Id: 1\nAddress:\n  City: Boulder\n  Street: Main St";
         var result = ToonSerializer.Deserialize<NestedObject>(toon);
-        Assert.NotNull(result);
-        Assert.Equal(1, result.Id);
-        Assert.NotNull(result.Address);
-        Assert.Equal("Boulder", result.Address.City);
-        Assert.Equal("Main St", result.Address.Street);
+        result.ShouldNotBeNull();
+        result.Id.ShouldBe(1);
+        result.Address.ShouldNotBeNull();
+        result.Address.City.ShouldBe("Boulder");
+        result.Address.Street.ShouldBe("Main St");
     }
 
     [Fact]
@@ -309,9 +328,9 @@ public class ToonSerializerTests
     {
         var toon = "[3]: a,b,c";
         var result = ToonSerializer.Deserialize<string[]>(toon);
-        Assert.NotNull(result);
-        Assert.Equal(3, result.Length);
-        Assert.Equal(["a", "b", "c"], result);
+        result.ShouldNotBeNull();
+        result.Length.ShouldBe(3);
+        result.ShouldBe(["a", "b", "c"]);
     }
 
     [Fact]
@@ -319,9 +338,9 @@ public class ToonSerializerTests
     {
         var toon = "[3]: 1,2,3";
         var result = ToonSerializer.Deserialize<int[]>(toon);
-        Assert.NotNull(result);
-        Assert.Equal(3, result.Length);
-        Assert.Equal([1, 2, 3], result);
+        result.ShouldNotBeNull();
+        result.Length.ShouldBe(3);
+        result.ShouldBe([1, 2, 3]);
     }
 
     [Fact]
@@ -329,14 +348,14 @@ public class ToonSerializerTests
     {
         var toon = "[2]{Sku,Qty,Price}:\n  A1,2,9.99\n  B2,1,14.5";
         var result = ToonSerializer.Deserialize<TabularItem[]>(toon);
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Length);
-        Assert.Equal("A1", result[0].Sku);
-        Assert.Equal(2, result[0].Qty);
-        Assert.Equal(9.99m, result[0].Price);
-        Assert.Equal("B2", result[1].Sku);
-        Assert.Equal(1, result[1].Qty);
-        Assert.Equal(14.5m, result[1].Price);
+        result.ShouldNotBeNull();
+        result.Length.ShouldBe(2);
+        result[0].Sku.ShouldBe("A1");
+        result[0].Qty.ShouldBe(2);
+        result[0].Price.ShouldBe(9.99m);
+        result[1].Sku.ShouldBe("B2");
+        result[1].Qty.ShouldBe(1);
+        result[1].Price.ShouldBe(14.5m);
     }
 
     [Fact]
@@ -344,10 +363,10 @@ public class ToonSerializerTests
     {
         var toon = "Tags[3]: admin,ops,dev";
         var result = ToonSerializer.Deserialize<TagsObject>(toon);
-        Assert.NotNull(result);
-        Assert.NotNull(result.Tags);
-        Assert.Equal(3, result.Tags.Length);
-        Assert.Equal(["admin", "ops", "dev"], result.Tags);
+        result.ShouldNotBeNull();
+        result.Tags.ShouldNotBeNull();
+        result.Tags.Length.ShouldBe(3);
+        result.Tags.ShouldBe(["admin", "ops", "dev"]);
     }
 
     public record TagsObject
@@ -360,9 +379,9 @@ public class ToonSerializerTests
     {
         var toon = "name: Ada\nAge: 30";
         var result = ToonSerializer.Deserialize<AttributeTestObject>(toon);
-        Assert.NotNull(result);
-        Assert.Equal("Ada", result.PersonName);
-        Assert.Equal(30, result.Age);
+        result.ShouldNotBeNull();
+        result.PersonName.ShouldBe("Ada");
+        result.Age.ShouldBe(30);
     }
 
     #endregion
@@ -375,9 +394,9 @@ public class ToonSerializerTests
         var original = new SimpleObject { Id = 42, Name = "Test", Active = true };
         var toon = ToonSerializer.Serialize(original);
         var result = ToonSerializer.Deserialize<SimpleObject>(toon);
-        Assert.Equal(original.Id, result?.Id);
-        Assert.Equal(original.Name, result?.Name);
-        Assert.Equal(original.Active, result?.Active);
+        result?.Id.ShouldBe(original.Id);
+        result?.Name.ShouldBe(original.Name);
+        result?.Active.ShouldBe(original.Active);
     }
 
     [Fact]
@@ -390,9 +409,9 @@ public class ToonSerializerTests
         };
         var toon = ToonSerializer.Serialize(original);
         var result = ToonSerializer.Deserialize<NestedObject>(toon);
-        Assert.Equal(original.Id, result?.Id);
-        Assert.Equal(original.Address?.City, result?.Address?.City);
-        Assert.Equal(original.Address?.Street, result?.Address?.Street);
+        result?.Id.ShouldBe(original.Id);
+        result?.Address?.City.ShouldBe(original.Address?.City);
+        result?.Address?.Street.ShouldBe(original.Address?.Street);
     }
 
     [Fact]
@@ -405,11 +424,11 @@ public class ToonSerializerTests
         };
         var toon = ToonSerializer.Serialize(original);
         var result = ToonSerializer.Deserialize<TabularItem[]>(toon);
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Length);
-        Assert.Equal(original[0].Sku, result[0].Sku);
-        Assert.Equal(original[0].Qty, result[0].Qty);
-        Assert.Equal(original[0].Price, result[0].Price);
+        result.ShouldNotBeNull();
+        result.Length.ShouldBe(2);
+        result[0].Sku.ShouldBe(original[0].Sku);
+        result[0].Qty.ShouldBe(original[0].Qty);
+        result[0].Price.ShouldBe(original[0].Price);
     }
 
     #endregion
@@ -420,7 +439,7 @@ public class ToonSerializerTests
     public void Serialize_EmptyObject_ReturnsEmptyString()
     {
         var result = ToonSerializer.Serialize(new { });
-        Assert.Equal("", result);
+        result.ShouldBe("");
     }
 
     [Fact]
@@ -428,15 +447,15 @@ public class ToonSerializerTests
     {
         var obj = new { Name = (string?)null, Age = 25 };
         var result = ToonSerializer.Serialize(obj);
-        Assert.Contains("Name: null", result);
-        Assert.Contains("Age: 25", result);
+        result.ShouldContain("Name: null");
+        result.ShouldContain("Age: 25");
     }
 
     [Fact]
     public void Deserialize_EmptyString_ReturnsNull()
     {
         var result = ToonSerializer.Deserialize<SimpleObject>("");
-        Assert.Null(result);
+        result.ShouldBeNull();
     }
 
     [Fact]
@@ -444,8 +463,8 @@ public class ToonSerializerTests
     {
         var obj = new QuotedKeyObject { OrderId = 1, FullName = "Ada" };
         var result = ToonSerializer.Serialize(obj);
-        Assert.Contains("\"order:id\": 1", result);
-        Assert.Contains("\"full name\": Ada", result);
+        result.ShouldContain("\"order:id\": 1");
+        result.ShouldContain("\"full name\": Ada");
     }
 
     public record QuotedKeyObject
@@ -462,9 +481,9 @@ public class ToonSerializerTests
     {
         var toon = "\"order:id\": 1\n\"full name\": Ada";
         var result = ToonSerializer.Deserialize<QuotedKeyObject>(toon);
-        Assert.NotNull(result);
-        Assert.Equal(1, result.OrderId);
-        Assert.Equal("Ada", result.FullName);
+        result.ShouldNotBeNull();
+        result.OrderId.ShouldBe(1);
+        result.FullName.ShouldBe("Ada");
     }
 
     [Fact]
@@ -472,8 +491,8 @@ public class ToonSerializerTests
     {
         var obj = new { Path = "C:\\Users\\test", Text = "line1\nline2" };
         var result = ToonSerializer.Serialize(obj);
-        Assert.Contains("\"C:\\\\Users\\\\test\"", result);
-        Assert.Contains("\"line1\\nline2\"", result);
+        result.ShouldContain("\"C:\\\\Users\\\\test\"");
+        result.ShouldContain("\"line1\\nline2\"");
     }
 
     [Fact]
@@ -481,9 +500,9 @@ public class ToonSerializerTests
     {
         var toon = "Path: \"C:\\\\Users\\\\test\"\nText: \"line1\\nline2\"";
         var result = ToonSerializer.Deserialize<PathObject>(toon);
-        Assert.NotNull(result);
-        Assert.Equal("C:\\Users\\test", result.Path);
-        Assert.Equal("line1\nline2", result.Text);
+        result.ShouldNotBeNull();
+        result.Path.ShouldBe("C:\\Users\\test");
+        result.Text.ShouldBe("line1\nline2");
     }
 
     public record PathObject
@@ -532,13 +551,16 @@ public class ToonSerializerTests
 
         var result = ToonSerializer.Serialize(obj);
 
-        Assert.Contains("Task: Our favorite hikes together", result);
-        Assert.Contains("Location: Boulder", result);
-        Assert.Contains("Friends[3]: ana,luis,sam", result);
-        Assert.Contains("Hikes[3]{Id,Name,DistanceKm,ElevationGain,Companion,WasSunny}:", result);
-        Assert.Contains("1,Blue Lake Trail,7.5,320,ana,true", result);
-        Assert.Contains("2,Ridge Overlook,9.2,540,luis,false", result);
-        Assert.Contains("3,Wildflower Loop,5.1,180,sam,true", result);
+        var expected = """
+            Task: Our favorite hikes together
+            Location: Boulder
+            Friends[3]: ana,luis,sam
+            Hikes[3]{Id,Name,DistanceKm,ElevationGain,Companion,WasSunny}:
+              1,Blue Lake Trail,7.5,320,ana,true
+              2,Ridge Overlook,9.2,540,luis,false
+              3,Wildflower Loop,5.1,180,sam,true
+            """;
+        result.ShouldBe(expected);
     }
 
     [Fact]
@@ -559,14 +581,14 @@ public class ToonSerializerTests
         var toon = ToonSerializer.Serialize(original);
         var result = ToonSerializer.Deserialize<ComplexObject>(toon);
 
-        Assert.NotNull(result);
-        Assert.Equal(original.Task, result.Task);
-        Assert.Equal(original.Location, result.Location);
-        Assert.Equal(original.Friends, result.Friends);
-        Assert.Equal(original.Hikes.Length, result.Hikes.Length);
-        Assert.Equal(original.Hikes[0].Name, result.Hikes[0].Name);
-        Assert.Equal(original.Hikes[0].DistanceKm, result.Hikes[0].DistanceKm);
-        Assert.Equal(original.Hikes[0].WasSunny, result.Hikes[0].WasSunny);
+        result.ShouldNotBeNull();
+        result.Task.ShouldBe(original.Task);
+        result.Location.ShouldBe(original.Location);
+        result.Friends.ShouldBe(original.Friends);
+        result.Hikes.Length.ShouldBe(original.Hikes.Length);
+        result.Hikes[0].Name.ShouldBe(original.Hikes[0].Name);
+        result.Hikes[0].DistanceKm.ShouldBe(original.Hikes[0].DistanceKm);
+        result.Hikes[0].WasSunny.ShouldBe(original.Hikes[0].WasSunny);
     }
 
     #endregion

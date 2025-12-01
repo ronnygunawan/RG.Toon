@@ -5,7 +5,7 @@
 
 A .NET implementation of the [TOON (Token-Oriented Object Notation)](https://github.com/toon-format/spec) serializer/deserializer.
 
-TOON is a compact, human-readable encoding of the JSON data model, particularly efficient for arrays of uniform objects. It's designed to minimize tokens while maintaining clear structure.
+TOON is a compact, human-readable encoding of the JSON data model, particularly efficient for arrays of uniform objects. It's designed to minimize LLM token consumptions while maintaining clear structure.
 
 ## Installation
 
