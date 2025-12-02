@@ -457,8 +457,8 @@ public static partial class ToonSerializer
         {
             return "null";
         }
-        // Normalize -0 to 0
-        if (value == 0f)
+        // Normalize -0 to 0 using bit comparison to avoid floating point equality issues
+        if (BitConverter.SingleToInt32Bits(value) is 0 or unchecked((int)0x80000000))
         {
             return "0";
         }
@@ -472,8 +472,8 @@ public static partial class ToonSerializer
         {
             return "null";
         }
-        // Normalize -0 to 0
-        if (value == 0d)
+        // Normalize -0 to 0 using bit comparison to avoid floating point equality issues
+        if (BitConverter.DoubleToInt64Bits(value) is 0L or unchecked((long)0x8000000000000000))
         {
             return "0";
         }
@@ -496,13 +496,11 @@ public static partial class ToonSerializer
     private static string NormalizeNumber(string number)
     {
         // Remove exponent notation
-        if (number.Contains('E', StringComparison.OrdinalIgnoreCase))
+        if (number.Contains('E', StringComparison.OrdinalIgnoreCase) &&
+            double.TryParse(number, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
         {
-            if (double.TryParse(number, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
-            {
-                // Format without exponent
-                number = d.ToString("0." + new string('#', 350), CultureInfo.InvariantCulture);
-            }
+            // Format without exponent
+            number = d.ToString("0." + new string('#', 350), CultureInfo.InvariantCulture);
         }
 
         // Remove trailing zeros in fractional part
@@ -645,14 +643,9 @@ public static partial class ToonSerializer
             }
         }
 
-        // Check for root array
-        if (depth == 0 && firstLine.StartsWith('['))
-        {
-            return ParseRootArray(context, type);
-        }
-
-        // Check if it's an array type
-        if (type.IsArray || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)))
+        // Check for root array or array type
+        if ((depth == 0 && firstLine.StartsWith('[')) ||
+            type.IsArray || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)))
         {
             return ParseRootArray(context, type);
         }

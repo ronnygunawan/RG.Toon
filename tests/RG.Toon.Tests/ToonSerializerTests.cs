@@ -49,12 +49,13 @@ public class ToonSerializerTests
         result.ShouldBe(expected);
     }
 
-    [Fact]
-    public void Serialize_IntegerNumber_ReturnsDecimal()
+    [Theory]
+    [InlineData(42, "42")]
+    [InlineData(-7, "-7")]
+    [InlineData(0, "0")]
+    public void Serialize_IntegerNumber_ReturnsDecimal(int input, string expected)
     {
-        ToonSerializer.Serialize(42).ShouldBe("42");
-        ToonSerializer.Serialize(-7).ShouldBe("-7");
-        ToonSerializer.Serialize(0).ShouldBe("0");
+        ToonSerializer.Serialize(input).ShouldBe(expected);
     }
 
     [Fact]
