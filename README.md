@@ -1,6 +1,7 @@
 # RG.Toon
 
 [![CI](https://github.com/ronnygunawan/RG.Toon/actions/workflows/ci.yml/badge.svg)](https://github.com/ronnygunawan/RG.Toon/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/RG.Toon.svg)](https://www.nuget.org/packages/RG.Toon/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 A .NET implementation of the [TOON (Token-Oriented Object Notation)](https://github.com/toon-format/spec) serializer/deserializer.
