@@ -810,7 +810,7 @@ public class ToonSerializerTests
         result[0].ShouldBe("42"); // a string, not numeric
     }
 
-    [Fact(Skip = "Requires custom delimiter support")]
+    [Fact]
     public void Delimiter_PipeHeader_ActiveDelimiterIsPipe()
     {
         var toon = "[2|]: a|b";
@@ -821,7 +821,7 @@ public class ToonSerializerTests
         result[1].ShouldBe("b");
     }
 
-    [Fact(Skip = "Requires custom delimiter support")]
+    [Fact]
     public void Delimiter_TabHeader_ActiveDelimiterIsTab()
     {
         var toon = "[2\t]: x\ty";
@@ -859,7 +859,7 @@ public class ToonSerializerTests
         item.Status.ShouldBe("active");
     }
 
-    [Fact(Skip = "Requires custom delimiter validation")]
+    [Fact]
     public void Deserialize_HeaderDelimiterFieldMismatch_Throws()
     {
         // Declares pipe but uses comma in the fields segment

@@ -663,7 +663,7 @@ public static partial class ToonSerializer
     {
         var line = context.ReadLine().TrimStart();
 
-        // Parse header: [N]: or [N]{fields}:
+        // Parse header: [N]: or [N|]: or [N\t]: or [N]{fields}:
         var bracketStart = line.IndexOf('[');
         var bracketEnd = line.IndexOf(']');
 
@@ -672,7 +672,27 @@ public static partial class ToonSerializer
             throw new FormatException("Invalid array header");
         }
 
-        var countStr = line[(bracketStart + 1)..bracketEnd];
+        var headerContent = line[(bracketStart + 1)..bracketEnd];
+        
+        // Extract delimiter and count
+        char delimiter = ','; // default delimiter
+        string countStr;
+        
+        if (headerContent.EndsWith('|'))
+        {
+            delimiter = '|';
+            countStr = headerContent[..^1];
+        }
+        else if (headerContent.EndsWith('\t'))
+        {
+            delimiter = '\t';
+            countStr = headerContent[..^1];
+        }
+        else
+        {
+            countStr = headerContent;
+        }
+        
         if (!int.TryParse(countStr, out var count))
         {
             throw new FormatException($"Invalid array count: {countStr}");
@@ -685,7 +705,15 @@ public static partial class ToonSerializer
         if (braceStart > 0 && braceEnd > braceStart)
         {
             var fieldsStr = line[(braceStart + 1)..braceEnd];
-            fields = ParseDelimitedFields(fieldsStr, ',');
+            
+            // Strict-mode: validate delimiter consistency between header and fields
+            char fieldsDelimiter = DetectDelimiter(fieldsStr);
+            if (fieldsDelimiter != delimiter && fieldsDelimiter != ',')
+            {
+                throw new FormatException($"Delimiter mismatch: header declares '{delimiter}' but fields use '{fieldsDelimiter}'");
+            }
+            
+            fields = ParseDelimitedFields(fieldsStr, delimiter);
         }
 
         // Find the colon
@@ -715,7 +743,7 @@ public static partial class ToonSerializer
         if (!string.IsNullOrEmpty(remainder))
         {
             // Inline primitive array
-            var values = ParseDelimitedValues(remainder, ',');
+            var values = ParseDelimitedValues(remainder, delimiter);
             
             // Strict-mode: validate count matches
             if (values.Count != count)
@@ -741,7 +769,7 @@ public static partial class ToonSerializer
                 }
 
                 context.ReadLine();
-                var rowValues = ParseDelimitedValues(rowLine.Trim(), ',');
+                var rowValues = ParseDelimitedValues(rowLine.Trim(), delimiter);
                 
                 // Strict-mode: validate row width matches field count
                 if (fields != null && rowValues.Count != fields.Count)
@@ -1006,7 +1034,27 @@ public static partial class ToonSerializer
             throw new FormatException("Invalid array header");
         }
 
-        var countStr = header[1..bracketEnd];
+        var headerContent = header[1..bracketEnd];
+        
+        // Extract delimiter and count
+        char delimiter = ','; // default delimiter
+        string countStr;
+        
+        if (headerContent.EndsWith('|'))
+        {
+            delimiter = '|';
+            countStr = headerContent[..^1];
+        }
+        else if (headerContent.EndsWith('\t'))
+        {
+            delimiter = '\t';
+            countStr = headerContent[..^1];
+        }
+        else
+        {
+            countStr = headerContent;
+        }
+        
         if (!int.TryParse(countStr, out var count))
         {
             throw new FormatException($"Invalid array count: {countStr}");
@@ -1034,7 +1082,15 @@ public static partial class ToonSerializer
         if (braceStart > 0 && braceEnd > braceStart)
         {
             var fieldsStr = header[(braceStart + 1)..braceEnd];
-            fields = ParseDelimitedFields(fieldsStr, ',');
+            
+            // Strict-mode: validate delimiter consistency between header and fields
+            char fieldsDelimiter = DetectDelimiter(fieldsStr);
+            if (fieldsDelimiter != delimiter && fieldsDelimiter != ',')
+            {
+                throw new FormatException($"Delimiter mismatch: header declares '{delimiter}' but fields use '{fieldsDelimiter}'");
+            }
+            
+            fields = ParseDelimitedFields(fieldsStr, delimiter);
         }
 
         // Find the colon
@@ -1049,7 +1105,7 @@ public static partial class ToonSerializer
         if (!string.IsNullOrEmpty(remainder))
         {
             // Inline primitive array
-            var values = ParseDelimitedValues(remainder, ',');
+            var values = ParseDelimitedValues(remainder, delimiter);
             
             // Strict-mode: validate count matches
             if (values.Count != count)
@@ -1075,7 +1131,7 @@ public static partial class ToonSerializer
                 }
 
                 context.ReadLine();
-                var rowValues = ParseDelimitedValues(rowLine.Trim(), ',');
+                var rowValues = ParseDelimitedValues(rowLine.Trim(), delimiter);
                 
                 // Strict-mode: validate row width matches field count
                 if (fields != null && rowValues.Count != fields.Count)
@@ -1343,6 +1399,25 @@ public static partial class ToonSerializer
 
         values.Add(current.ToString().Trim());
         return values;
+    }
+    
+    private static char DetectDelimiter(string input)
+    {
+        bool inQuotes = false;
+        foreach (var c in input)
+        {
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+            }
+            else if (!inQuotes)
+            {
+                if (c == '|') return '|';
+                if (c == '\t') return '\t';
+                if (c == ',') return ',';
+            }
+        }
+        return ','; // default
     }
 
     private static List<string> ParseDelimitedFields(string input, char delimiter)
