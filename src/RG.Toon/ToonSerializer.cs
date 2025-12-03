@@ -1123,9 +1123,13 @@ public static partial class ToonSerializer
             return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
         }
 
-        // Quoted string
-        if (token.StartsWith('"') && token.EndsWith('"'))
+        // Quoted string - validate and unescape
+        if (token.StartsWith('"'))
         {
+            if (!token.EndsWith('"') || token.Length < 2)
+            {
+                throw new FormatException($"Unterminated quoted string: {token}");
+            }
             var str = UnescapeString(token[1..^1]);
             return ConvertTo(str, targetType);
         }

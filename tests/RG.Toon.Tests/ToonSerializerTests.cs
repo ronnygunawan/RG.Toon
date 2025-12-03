@@ -692,4 +692,228 @@ public class ToonSerializerTests
     }
 
     #endregion
+
+    #region SPEC Compliance Tests
+
+    // Note: The following tests are based on TOON SPEC requirements.
+    // Many require strict-mode validation not yet implemented in this naive version.
+    // Tests that fail due to missing strict-mode features are marked with comments.
+
+    [Fact(Skip = "Requires strict-mode validation")]
+    public void Deserialize_ArrayCountMismatch_Inline_Throws()
+    {
+        var toon = "[2]: a"; // declared 2, provided 1
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<string[]>(toon));
+    }
+
+    [Fact(Skip = "Requires strict-mode validation")]
+    public void Deserialize_ArrayCountMismatch_ListItems_Throws()
+    {
+        var toon = "[2]:\n  - 1"; // declared 2, only 1 item
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<int[]>(toon));
+    }
+
+    [Fact(Skip = "Requires strict-mode validation")]
+    public void Deserialize_TabularRowWidthMismatch_Throws()
+    {
+        var toon = "[2]{id,name}:\n  1\n  2,Bob"; // first row has 1 value, should be 2
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<TabularItem[]>(toon));
+    }
+
+    [Fact(Skip = "Requires strict-mode validation")]
+    public void Deserialize_MissingColon_Throws()
+    {
+        var toon = "key value"; // missing colon
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object>(toon));
+    }
+
+    [Fact]
+    public void Deserialize_InvalidEscapeSequence_Throws()
+    {
+        // Debug: what does the test string look like?
+        var toon = "Path: \"bad\\x\"";
+        var colonIndex = toon.IndexOf(':');
+        var valuepart = toon.Substring(colonIndex + 1).Trim();
+        // valuepart should be: "bad\x" (with quotes)
+        // After removing quotes: bad\x
+        // UnescapeString should throw on \x
+        
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<PathObject>(toon));
+    }
+
+    [Fact]
+    public void Deserialize_UnterminatedString_Throws()
+    {
+        var toon = "Path: \"unterminated";
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<PathObject>(toon));
+    }
+
+    [Fact(Skip = "Requires strict-mode validation")]
+    public void Deserialize_IndentationNotMultipleOfIndentSize_Throws()
+    {
+        // "A:" at depth 0, next line has 1 leading space (indentSize default 2)
+        var toon = "A:\n a: 1";
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object>(toon));
+    }
+
+    [Fact(Skip = "Requires strict-mode validation")]
+    public void Deserialize_TabCharacterUsedForIndentation_Throws()
+    {
+        var toon = "A:\n\tB: 1"; // tab at beginning of line
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object>(toon));
+    }
+
+    [Fact(Skip = "Requires strict-mode validation")]
+    public void Deserialize_BlankLineInsideArrayRows_Throws()
+    {
+        var toon = "[2]:\n  a\n\n  b"; // blank line between rows
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<string[]>(toon));
+    }
+
+    [Fact]
+    public void Serialize_NoTrailingSpacesOrNewline()
+    {
+        var obj = new SimpleObject { Id = 1, Name = "A", Active = true };
+        var result = ToonSerializer.Serialize(obj);
+        // No trailing newline
+        result.EndsWith("\n").ShouldBeFalse();
+        // No trailing space at end of any line
+        foreach (var line in result.Split('\n'))
+        {
+            line.EndsWith(" ").ShouldBeFalse();
+        }
+    }
+
+    [Fact]
+    public void Serialize_Number_TrailingZerosNormalized()
+    {
+        double value = 1.5000; // numeric literal equals 1.5, but test intent is canonical formatting
+        var s = ToonSerializer.Serialize(value);
+        s.ShouldBe("1.5");
+    }
+
+    [Fact]
+    public void Serialize_Number_NoExponentNotation()
+    {
+        double value = 1e6; // 1000000
+        var s = ToonSerializer.Serialize(value);
+        s.ShouldBe("1000000");
+    }
+
+    [Fact]
+    public void Deserialize_QuotedNumericInArray_RemainsString()
+    {
+        var toon = "[1]: \"42\"";
+        var result = ToonSerializer.Deserialize<string[]>(toon);
+        result.ShouldNotBeNull();
+        result.Length.ShouldBe(1);
+        result[0].ShouldBe("42"); // a string, not numeric
+    }
+
+    [Fact(Skip = "Requires custom delimiter support")]
+    public void Delimiter_PipeHeader_ActiveDelimiterIsPipe()
+    {
+        var toon = "[2|]: a|b";
+        var result = ToonSerializer.Deserialize<string[]>(toon);
+        result.ShouldNotBeNull();
+        result.Length.ShouldBe(2);
+        result[0].ShouldBe("a");
+        result[1].ShouldBe("b");
+    }
+
+    [Fact(Skip = "Requires custom delimiter support")]
+    public void Delimiter_TabHeader_ActiveDelimiterIsTab()
+    {
+        var toon = "[2\t]: x\ty";
+        var arr = ToonSerializer.Deserialize<string[]>(toon);
+        arr.ShouldBe(new[] { "x", "y" });
+    }
+
+    [Fact(Skip = "Requires nested array support")]
+    public void Deserialize_ArraysOfArrays_ExpandedList_Parse()
+    {
+        var toon = "[2]:\n  - [2]: 1,2\n  - [2]: 3,4";
+        var result = ToonSerializer.Deserialize<int[][]>(toon);
+        result.ShouldNotBeNull();
+        result.Length.ShouldBe(2);
+        result[0].ShouldBe(new[] { 1, 2 });
+        result[1].ShouldBe(new[] { 3, 4 });
+    }
+
+    [Fact(Skip = "Requires list-item objects with tabular support")]
+    public void Deserialize_ObjectsAsListItems_TabularFirstField()
+    {
+        var toon =
+@"items[1]:
+  - users[2]{id,name}:
+      1,Ada
+      2,Bob
+    status: active";
+        var root = ToonSerializer.Deserialize<ItemsContainer>(toon);
+        root.ShouldNotBeNull();
+        root.Items.ShouldNotBeNull();
+        root.Items.Length.ShouldBe(1);
+        var item = root.Items[0];
+        item.Users.Length.ShouldBe(2);
+        item.Users[0].Sku.ShouldBe("1");
+        item.Status.ShouldBe("active");
+    }
+
+    [Fact(Skip = "Requires custom delimiter validation")]
+    public void Deserialize_HeaderDelimiterFieldMismatch_Throws()
+    {
+        // Declares pipe but uses comma in the fields segment
+        var toon = "[1|]{a,b}:\n  x|y";
+        Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object[]>(toon));
+    }
+
+    [Fact(Skip = "Requires tabular row vs key disambiguation")]
+    public void Deserialize_TabularRowVsKeyDisambiguation_EndRowsOnKey()
+    {
+        var toon =
+@"data[2]{id,name}:
+  1,Alice
+  note: Something else
+key: value";
+        var doc = ToonSerializer.Deserialize<RootWithData>(toon);
+        doc.ShouldNotBeNull();
+        doc.Data.Length.ShouldBe(1);
+        doc.Key.ShouldBe("value");
+    }
+
+    [Fact(Skip = "Requires expandPaths configuration")]
+    public void Deserialize_DottedKeyTreatedLiteral_ByDefault()
+    {
+        var toon = "user.name: Ada";
+        // Use a target type with a property literally named "user.name" via ToonPropertyName
+        var result = ToonSerializer.Deserialize<UserDotNameHolder>(toon);
+        result.ShouldNotBeNull();
+        result.UserDotName.ShouldBe("Ada");
+    }
+
+    // Helper types for SPEC compliance tests
+    public record ItemsContainer
+    {
+        public ListWrapper[] Items { get; init; } = [];
+    }
+
+    public record ListWrapper
+    {
+        public TabularItem[] Users { get; init; } = [];
+        public string Status { get; init; } = "";
+    }
+
+    public record RootWithData
+    {
+        public TabularItem[] Data { get; init; } = [];
+        public string Key { get; init; } = "";
+    }
+
+    public record UserDotNameHolder
+    {
+        [ToonPropertyName("user.name")]
+        public string UserDotName { get; init; } = "";
+    }
+
+    #endregion
 }
