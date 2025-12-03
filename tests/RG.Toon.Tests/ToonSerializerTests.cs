@@ -720,7 +720,7 @@ public class ToonSerializerTests
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<TabularItem[]>(toon));
     }
 
-    [Fact(Skip = "Requires strict-mode validation")]
+    [Fact]
     public void Deserialize_MissingColon_Throws()
     {
         var toon = "key value"; // missing colon
@@ -748,7 +748,7 @@ public class ToonSerializerTests
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<PathObject>(toon));
     }
 
-    [Fact(Skip = "Requires strict-mode validation")]
+    [Fact]
     public void Deserialize_IndentationNotMultipleOfIndentSize_Throws()
     {
         // "A:" at depth 0, next line has 1 leading space (indentSize default 2)
@@ -756,14 +756,14 @@ public class ToonSerializerTests
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object>(toon));
     }
 
-    [Fact(Skip = "Requires strict-mode validation")]
+    [Fact]
     public void Deserialize_TabCharacterUsedForIndentation_Throws()
     {
         var toon = "A:\n\tB: 1"; // tab at beginning of line
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object>(toon));
     }
 
-    [Fact(Skip = "Requires strict-mode validation")]
+    [Fact]
     public void Deserialize_BlankLineInsideArrayRows_Throws()
     {
         var toon = "[2]:\n  a\n\n  b"; // blank line between rows

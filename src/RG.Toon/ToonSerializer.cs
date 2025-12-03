@@ -767,6 +767,13 @@ public static partial class ToonSerializer
             for (int i = 0; i < count && context.HasMoreLines(); i++)
             {
                 var itemLine = context.PeekLine();
+                
+                // Strict-mode: blank lines not allowed in arrays
+                if (string.IsNullOrWhiteSpace(itemLine) && items.Count > 0 && i < count - 1)
+                {
+                    throw new FormatException("Blank line found inside array rows");
+                }
+                
                 var itemDepth = GetDepth(itemLine, context.IndentSize);
                 if (itemDepth <= 0)
                 {
@@ -956,6 +963,11 @@ public static partial class ToonSerializer
             var colonIndex = FindUnquotedColon(trimmed);
             if (colonIndex < 0)
             {
+                // Strict-mode: if line looks like it should be a key-value but has no colon, throw
+                if (!trimmed.StartsWith('-') && !trimmed.StartsWith('[') && trimmed.Contains(' '))
+                {
+                    throw new FormatException($"Missing colon in key-value pair: {trimmed}");
+                }
                 continue;
             }
 
@@ -1089,6 +1101,13 @@ public static partial class ToonSerializer
             for (int i = 0; i < count && context.HasMoreLines(); i++)
             {
                 var itemLine = context.PeekLine();
+                
+                // Strict-mode: blank lines not allowed in arrays
+                if (string.IsNullOrWhiteSpace(itemLine) && items.Count > 0 && i < count - 1)
+                {
+                    throw new FormatException("Blank line found inside array rows");
+                }
+                
                 var itemDepth = GetDepth(itemLine, context.IndentSize);
                 if (itemDepth <= depth)
                 {
@@ -1424,11 +1443,23 @@ public static partial class ToonSerializer
             {
                 spaces++;
             }
+            else if (c == '\t')
+            {
+                // Strict-mode: tabs not allowed for indentation
+                throw new FormatException("Tab character used for indentation is not allowed");
+            }
             else
             {
                 break;
             }
         }
+        
+        // Strict-mode: indentation must be a multiple of indentSize
+        if (spaces > 0 && spaces % indentSize != 0)
+        {
+            throw new FormatException($"Indentation must be a multiple of {indentSize}, got {spaces} spaces");
+        }
+        
         return spaces / indentSize;
     }
 
