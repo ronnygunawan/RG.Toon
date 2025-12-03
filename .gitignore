@@ -1,0 +1,64 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# User-specific files
+*.rsuser
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+.nuget/
+packages/
+
+# Chutzpah Test files
+_Chutzpah*
+
+# Test Results
+[Tt]est[Rr]esult*/
+*.trx
+[Aa]ppPackages/
+BenchmarkDotNet.Artifacts/
+
+# NCrunch
+*.ncrunch*
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# Coverage
+*.coverage
+*.coveragexml
+coverage-report/
+coverage/
+
+# Others
+*.log
+*.tmp
+*.temp
+*.cache
+.DS_Store
+Thumbs.db
