@@ -699,21 +699,21 @@ public class ToonSerializerTests
     // Many require strict-mode validation not yet implemented in this naive version.
     // Tests that fail due to missing strict-mode features are marked with comments.
 
-    [Fact(Skip = "Requires strict-mode validation")]
+    [Fact]
     public void Deserialize_ArrayCountMismatch_Inline_Throws()
     {
         var toon = "[2]: a"; // declared 2, provided 1
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<string[]>(toon));
     }
 
-    [Fact(Skip = "Requires strict-mode validation")]
+    [Fact]
     public void Deserialize_ArrayCountMismatch_ListItems_Throws()
     {
         var toon = "[2]:\n  - 1"; // declared 2, only 1 item
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<int[]>(toon));
     }
 
-    [Fact(Skip = "Requires strict-mode validation")]
+    [Fact]
     public void Deserialize_TabularRowWidthMismatch_Throws()
     {
         var toon = "[2]{id,name}:\n  1\n  2,Bob"; // first row has 1 value, should be 2

@@ -716,6 +716,13 @@ public static partial class ToonSerializer
         {
             // Inline primitive array
             var values = ParseDelimitedValues(remainder, ',');
+            
+            // Strict-mode: validate count matches
+            if (values.Count != count)
+            {
+                throw new FormatException($"Array count mismatch: declared {count}, provided {values.Count}");
+            }
+            
             return ConvertToArray(values, elementType, type);
         }
 
@@ -735,8 +742,22 @@ public static partial class ToonSerializer
 
                 context.ReadLine();
                 var rowValues = ParseDelimitedValues(rowLine.Trim(), ',');
+                
+                // Strict-mode: validate row width matches field count
+                if (fields != null && rowValues.Count != fields.Count)
+                {
+                    throw new FormatException($"Tabular row width mismatch: expected {fields.Count} fields, got {rowValues.Count}");
+                }
+                
                 items.Add(CreateObjectFromFields(elementType, fields, rowValues));
             }
+            
+            // Strict-mode: validate count matches
+            if (items.Count != count)
+            {
+                throw new FormatException($"Array count mismatch: declared {count}, provided {items.Count}");
+            }
+            
             return ConvertToArray(items, elementType, type);
         }
         else
@@ -764,6 +785,13 @@ public static partial class ToonSerializer
                     items.Add(ParsePrimitiveToken(trimmed, elementType));
                 }
             }
+            
+            // Strict-mode: validate count matches
+            if (items.Count != count)
+            {
+                throw new FormatException($"Array count mismatch: declared {count}, provided {items.Count}");
+            }
+            
             return ConvertToArray(items, elementType, type);
         }
     }
@@ -1010,6 +1038,13 @@ public static partial class ToonSerializer
         {
             // Inline primitive array
             var values = ParseDelimitedValues(remainder, ',');
+            
+            // Strict-mode: validate count matches
+            if (values.Count != count)
+            {
+                throw new FormatException($"Array count mismatch: declared {count}, provided {values.Count}");
+            }
+            
             return ConvertToArray(values, elementType, type);
         }
 
@@ -1029,8 +1064,22 @@ public static partial class ToonSerializer
 
                 context.ReadLine();
                 var rowValues = ParseDelimitedValues(rowLine.Trim(), ',');
+                
+                // Strict-mode: validate row width matches field count
+                if (fields != null && rowValues.Count != fields.Count)
+                {
+                    throw new FormatException($"Tabular row width mismatch: expected {fields.Count} fields, got {rowValues.Count}");
+                }
+                
                 items.Add(CreateObjectFromFields(elementType, fields, rowValues));
             }
+            
+            // Strict-mode: validate count matches
+            if (items.Count != count)
+            {
+                throw new FormatException($"Array count mismatch: declared {count}, provided {items.Count}");
+            }
+            
             return ConvertToArray(items, elementType, type);
         }
         else
@@ -1058,6 +1107,13 @@ public static partial class ToonSerializer
                     items.Add(ParsePrimitiveToken(trimmed, elementType));
                 }
             }
+            
+            // Strict-mode: validate count matches
+            if (items.Count != count)
+            {
+                throw new FormatException($"Array count mismatch: declared {count}, provided {items.Count}");
+            }
+            
             return ConvertToArray(items, elementType, type);
         }
     }
