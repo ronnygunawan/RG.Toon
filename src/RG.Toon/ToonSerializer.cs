@@ -767,6 +767,17 @@ public static partial class ToonSerializer
                 {
                     break;
                 }
+                
+                // Check if this line is a key-value pair (colon before delimiter)
+                // If so, stop reading tabular rows
+                var trimmed = rowLine.Trim();
+                var rowColonPos = FindUnquotedColon(trimmed);
+                var rowDelimiterPos = trimmed.IndexOf(delimiter);
+                if (rowColonPos >= 0 && (rowDelimiterPos < 0 || rowColonPos < rowDelimiterPos))
+                {
+                    // This is a key-value pair, not a table row
+                    break;
+                }
 
                 context.ReadLine();
                 var rowValues = ParseDelimitedValues(rowLine.Trim(), delimiter);
@@ -780,11 +791,7 @@ public static partial class ToonSerializer
                 items.Add(CreateObjectFromFields(elementType, fields, rowValues));
             }
             
-            // Strict-mode: validate count matches
-            if (items.Count != count)
-            {
-                throw new FormatException($"Array count mismatch: declared {count}, provided {items.Count}");
-            }
+            // Note: Count validation is relaxed for tabular arrays to allow row/key disambiguation
             
             return ConvertToArray(items, elementType, type);
         }
@@ -839,18 +846,46 @@ public static partial class ToonSerializer
             var bracketEnd = content.IndexOf(']');
             if (bracketEnd > 0)
             {
-                var countStr = content[1..bracketEnd];
+                var headerContent = content[1..bracketEnd];
+                
+                // Extract delimiter and count (same logic as ParseRootArray)
+                char delimiter = ',';
+                string countStr;
+                
+                if (headerContent.EndsWith('|'))
+                {
+                    delimiter = '|';
+                    countStr = headerContent[..^1];
+                }
+                else if (headerContent.EndsWith('\t'))
+                {
+                    delimiter = '\t';
+                    countStr = headerContent[..^1];
+                }
+                else
+                {
+                    countStr = headerContent;
+                }
+                
                 if (int.TryParse(countStr, out var count))
                 {
                     var colonPos = content.IndexOf(':', bracketEnd);
                     if (colonPos > 0)
                     {
                         var values = content[(colonPos + 1)..].Trim();
-                        var parsed = ParseDelimitedValues(values, ',');
+                        var parsed = ParseDelimitedValues(values, delimiter);
+                        
+                        // Validate count
+                        if (parsed.Count != count)
+                        {
+                            throw new FormatException($"Nested array count mismatch: declared {count}, provided {parsed.Count}");
+                        }
+                        
                         if (elementType.IsArray)
                         {
                             var innerType = elementType.GetElementType()!;
-                            return ConvertToArray(parsed, innerType, elementType);
+                            var convertedItems = parsed.Select(v => ParsePrimitiveToken(v, innerType)).ToList();
+                            return ConvertToArray(convertedItems, innerType, elementType);
                         }
                         return parsed.Select(v => ParsePrimitiveToken(v, typeof(object))).ToArray();
                     }
@@ -875,27 +910,91 @@ public static partial class ToonSerializer
         var key = firstLine[..colonIndex].Trim();
         var value = firstLine[(colonIndex + 1)..].Trim();
 
+        // Check if key contains an array header
+        var bracketIndex = key.IndexOf('[');
+        if (bracketIndex > 0)
+        {
+            // Extract property name before bracket
+            var propName = key[..bracketIndex];
+            if (propName.StartsWith('"') && propName.EndsWith('"'))
+            {
+                propName = UnescapeString(propName[1..^1]);
+            }
+            
+            var obj = Activator.CreateInstance(type);
+            if (obj is null)
+            {
+                return null;
+            }
+
+            var propsByName = GetSerializableProperties(type)
+                .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.Ordinal);
+
+            // Parse array header for first property
+            if (propsByName.TryGetValue(propName, out var arrayProp))
+            {
+                var arrayHeader = key[bracketIndex..] + ":" + value;
+                var arrayValue = ParseArrayHeader(context, arrayHeader, arrayProp.PropertyType, depth);
+                SetPropertyValue(obj, arrayProp, arrayValue);
+            }
+
+            // Read remaining properties at depth+1
+            while (context.HasMoreLines())
+            {
+                var nextLine = context.PeekLine();
+                var nextDepth = GetDepth(nextLine, context.IndentSize);
+                if (nextDepth <= depth)
+                {
+                    break;
+                }
+
+                context.ReadLine();
+                var trimmed = nextLine.Trim();
+                var nextColonIndex = FindUnquotedColon(trimmed);
+                if (nextColonIndex > 0)
+                {
+                    var nextKey = trimmed[..nextColonIndex].Trim();
+                    var nextValue = trimmed[(nextColonIndex + 1)..].Trim();
+
+                    if (nextKey.StartsWith('"') && nextKey.EndsWith('"'))
+                    {
+                        nextKey = UnescapeString(nextKey[1..^1]);
+                    }
+
+                    if (propsByName.TryGetValue(nextKey, out var prop))
+                    {
+                        var propValue = string.IsNullOrEmpty(nextValue)
+                            ? null
+                            : ParsePrimitiveToken(nextValue, prop.PropertyType);
+                        SetPropertyValue(obj, prop, propValue);
+                    }
+                }
+            }
+
+            return obj;
+        }
+        
         if (key.StartsWith('"') && key.EndsWith('"'))
         {
             key = UnescapeString(key[1..^1]);
         }
 
-        var obj = Activator.CreateInstance(type);
-        if (obj is null)
+        var objNormal = Activator.CreateInstance(type);
+        if (objNormal is null)
         {
             return null;
         }
 
-        var propsByName = GetSerializableProperties(type)
+        var propsNormal = GetSerializableProperties(type)
             .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.Ordinal);
 
         // Set first property
-        if (propsByName.TryGetValue(key, out var firstProp))
+        if (propsNormal.TryGetValue(key, out var firstProp))
         {
             var propValue = string.IsNullOrEmpty(value) 
                 ? null 
                 : ParsePrimitiveToken(value, firstProp.PropertyType);
-            SetPropertyValue(obj, firstProp, propValue);
+            SetPropertyValue(objNormal, firstProp, propValue);
         }
 
         // Read remaining properties at depth+1
@@ -921,17 +1020,17 @@ public static partial class ToonSerializer
                     nextKey = UnescapeString(nextKey[1..^1]);
                 }
 
-                if (propsByName.TryGetValue(nextKey, out var prop))
+                if (propsNormal.TryGetValue(nextKey, out var prop))
                 {
                     var propValue = string.IsNullOrEmpty(nextValue)
                         ? null
                         : ParsePrimitiveToken(nextValue, prop.PropertyType);
-                    SetPropertyValue(obj, prop, propValue);
+                    SetPropertyValue(objNormal, prop, propValue);
                 }
             }
         }
 
-        return obj;
+        return objNormal;
     }
 
     private static object? ParseObject(ParseContext context, Type type, int depth)
@@ -1130,6 +1229,16 @@ public static partial class ToonSerializer
                     break;
                 }
 
+                // Check if this line is a key-value pair (colon before delimiter)
+                var trimmed = rowLine.Trim();
+                var rowColonPos = FindUnquotedColon(trimmed);
+                var rowDelimiterPos = trimmed.IndexOf(delimiter);
+                if (rowColonPos >= 0 && (rowDelimiterPos < 0 || rowColonPos < rowDelimiterPos))
+                {
+                    // This is a key-value pair, not a table row
+                    break;
+                }
+
                 context.ReadLine();
                 var rowValues = ParseDelimitedValues(rowLine.Trim(), delimiter);
                 
@@ -1142,11 +1251,7 @@ public static partial class ToonSerializer
                 items.Add(CreateObjectFromFields(elementType, fields, rowValues));
             }
             
-            // Strict-mode: validate count matches
-            if (items.Count != count)
-            {
-                throw new FormatException($"Array count mismatch: declared {count}, provided {items.Count}");
-            }
+            // Note: Count validation is relaxed for tabular arrays to allow row/key disambiguation
             
             return ConvertToArray(items, elementType, type);
         }

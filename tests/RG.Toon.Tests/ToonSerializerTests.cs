@@ -829,7 +829,7 @@ public class ToonSerializerTests
         arr.ShouldBe(new[] { "x", "y" });
     }
 
-    [Fact(Skip = "Requires nested array support")]
+    [Fact]
     public void Deserialize_ArraysOfArrays_ExpandedList_Parse()
     {
         var toon = "[2]:\n  - [2]: 1,2\n  - [2]: 3,4";
@@ -840,7 +840,7 @@ public class ToonSerializerTests
         result[1].ShouldBe(new[] { 3, 4 });
     }
 
-    [Fact(Skip = "Requires list-item objects with tabular support")]
+    [Fact]
     public void Deserialize_ObjectsAsListItems_TabularFirstField()
     {
         var toon =
@@ -867,7 +867,7 @@ public class ToonSerializerTests
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object[]>(toon));
     }
 
-    [Fact(Skip = "Requires tabular row vs key disambiguation")]
+    [Fact]
     public void Deserialize_TabularRowVsKeyDisambiguation_EndRowsOnKey()
     {
         var toon =
@@ -881,7 +881,7 @@ key: value";
         doc.Key.ShouldBe("value");
     }
 
-    [Fact(Skip = "Requires expandPaths configuration")]
+    [Fact]
     public void Deserialize_DottedKeyTreatedLiteral_ByDefault()
     {
         var toon = "user.name: Ada";
