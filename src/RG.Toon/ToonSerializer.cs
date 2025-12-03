@@ -708,7 +708,7 @@ public static partial class ToonSerializer
             
             // Strict-mode: validate delimiter consistency between header and fields
             char fieldsDelimiter = DetectDelimiter(fieldsStr);
-            if (fieldsDelimiter != delimiter && fieldsDelimiter != ',')
+            if (delimiter != ',' && fieldsDelimiter != delimiter)
             {
                 throw new FormatException($"Delimiter mismatch: header declares '{delimiter}' but fields use '{fieldsDelimiter}'");
             }
@@ -772,7 +772,7 @@ public static partial class ToonSerializer
                 // If so, stop reading tabular rows
                 var trimmed = rowLine.Trim();
                 var rowColonPos = FindUnquotedColon(trimmed);
-                var rowDelimiterPos = trimmed.IndexOf(delimiter);
+                var rowDelimiterPos = FindUnquotedDelimiter(trimmed, delimiter);
                 if (rowColonPos >= 0 && (rowDelimiterPos < 0 || rowColonPos < rowDelimiterPos))
                 {
                     // This is a key-value pair, not a table row
@@ -1184,7 +1184,7 @@ public static partial class ToonSerializer
             
             // Strict-mode: validate delimiter consistency between header and fields
             char fieldsDelimiter = DetectDelimiter(fieldsStr);
-            if (fieldsDelimiter != delimiter && fieldsDelimiter != ',')
+            if (delimiter != ',' && fieldsDelimiter != delimiter)
             {
                 throw new FormatException($"Delimiter mismatch: header declares '{delimiter}' but fields use '{fieldsDelimiter}'");
             }
@@ -1232,7 +1232,7 @@ public static partial class ToonSerializer
                 // Check if this line is a key-value pair (colon before delimiter)
                 var trimmed = rowLine.Trim();
                 var rowColonPos = FindUnquotedColon(trimmed);
-                var rowDelimiterPos = trimmed.IndexOf(delimiter);
+                var rowDelimiterPos = FindUnquotedDelimiter(trimmed, delimiter);
                 if (rowColonPos >= 0 && (rowDelimiterPos < 0 || rowColonPos < rowDelimiterPos))
                 {
                     // This is a key-value pair, not a table row
@@ -1523,6 +1523,23 @@ public static partial class ToonSerializer
             }
         }
         return ','; // default
+    }
+    
+    private static int FindUnquotedDelimiter(string input, char delimiter)
+    {
+        bool inQuotes = false;
+        for (int i = 0; i < input.Length; i++)
+        {
+            if (input[i] == '"')
+            {
+                inQuotes = !inQuotes;
+            }
+            else if (!inQuotes && input[i] == delimiter)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static List<string> ParseDelimitedFields(string input, char delimiter)
