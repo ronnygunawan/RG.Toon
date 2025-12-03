@@ -928,7 +928,7 @@ public static partial class ToonSerializer
             }
 
             var propsByName = GetSerializableProperties(type)
-                .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.Ordinal);
+                .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.OrdinalIgnoreCase);
 
             // Parse array header for first property
             if (propsByName.TryGetValue(propName, out var arrayProp))
@@ -986,7 +986,7 @@ public static partial class ToonSerializer
         }
 
         var propsNormal = GetSerializableProperties(type)
-            .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.Ordinal);
+            .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.OrdinalIgnoreCase);
 
         // Set first property
         if (propsNormal.TryGetValue(key, out var firstProp))
@@ -1042,7 +1042,7 @@ public static partial class ToonSerializer
         }
 
         var propsByName = GetSerializableProperties(type)
-            .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.Ordinal);
+            .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.OrdinalIgnoreCase);
 
         while (context.HasMoreLines())
         {
@@ -1307,7 +1307,7 @@ public static partial class ToonSerializer
         }
 
         var propsByName = GetSerializableProperties(type)
-            .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.Ordinal);
+            .ToDictionary(p => GetPropertyName(p), p => p, StringComparer.OrdinalIgnoreCase);
 
         for (int i = 0; i < fields.Count && i < values.Count; i++)
         {
