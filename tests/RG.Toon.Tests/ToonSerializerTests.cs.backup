@@ -304,11 +304,7 @@ public class ToonSerializerTests
     [Fact]
     public void Deserialize_SimpleObject_ReturnsCorrectObject()
     {
-        var toon = """
-            Id: 123
-            Name: Ada
-            Active: true
-            """;
+        var toon = "Id: 123\nName: Ada\nActive: true";
         var result = ToonSerializer.Deserialize<SimpleObject>(toon);
         result.ShouldNotBeNull();
         result.Id.ShouldBe(123);
@@ -319,12 +315,7 @@ public class ToonSerializerTests
     [Fact]
     public void Deserialize_NestedObject_ReturnsCorrectObject()
     {
-        var toon = """
-            Id: 1
-            Address:
-              City: Boulder
-              Street: Main St
-            """;
+        var toon = "Id: 1\nAddress:\n  City: Boulder\n  Street: Main St";
         var result = ToonSerializer.Deserialize<NestedObject>(toon);
         result.ShouldNotBeNull();
         result.Id.ShouldBe(1);
@@ -356,11 +347,7 @@ public class ToonSerializerTests
     [Fact]
     public void Deserialize_TabularArray_ReturnsCorrectObjects()
     {
-        var toon = """
-            [2]{Sku,Qty,Price}:
-              A1,2,9.99
-              B2,1,14.5
-            """;
+        var toon = "[2]{Sku,Qty,Price}:\n  A1,2,9.99\n  B2,1,14.5";
         var result = ToonSerializer.Deserialize<TabularItem[]>(toon);
         result.ShouldNotBeNull();
         result.Length.ShouldBe(2);
@@ -391,10 +378,7 @@ public class ToonSerializerTests
     [Fact]
     public void Deserialize_WithToonPropertyName_UsesCustomName()
     {
-        var toon = """
-            name: Ada
-            Age: 30
-            """;
+        var toon = "name: Ada\nAge: 30";
         var result = ToonSerializer.Deserialize<AttributeTestObject>(toon);
         result.ShouldNotBeNull();
         result.PersonName.ShouldBe("Ada");
@@ -496,10 +480,7 @@ public class ToonSerializerTests
     [Fact]
     public void Deserialize_QuotedKeys()
     {
-        var toon = """
-            "order:id": 1
-            "full name": Ada
-            """;
+        var toon = "\"order:id\": 1\n\"full name\": Ada";
         var result = ToonSerializer.Deserialize<QuotedKeyObject>(toon);
         result.ShouldNotBeNull();
         result.OrderId.ShouldBe(1);
@@ -518,10 +499,7 @@ public class ToonSerializerTests
     [Fact]
     public void Deserialize_EscapedStrings()
     {
-        var toon = """
-            Path: "C:\\Users\\test"
-            Text: "line1\nline2"
-            """;
+        var toon = "Path: \"C:\\\\Users\\\\test\"\nText: \"line1\\nline2\"";
         var result = ToonSerializer.Deserialize<PathObject>(toon);
         result.ShouldNotBeNull();
         result.Path.ShouldBe("C:\\Users\\test");
@@ -731,21 +709,14 @@ public class ToonSerializerTests
     [Fact]
     public void Deserialize_ArrayCountMismatch_ListItems_Throws()
     {
-        var toon = """
-            [2]:
-              - 1
-            """; // declared 2, only 1 item
+        var toon = "[2]:\n  - 1"; // declared 2, only 1 item
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<int[]>(toon));
     }
 
     [Fact]
     public void Deserialize_TabularRowWidthMismatch_Throws()
     {
-        var toon = """
-            [2]{id,name}:
-              1
-              2,Bob
-            """; // first row has 1 value, should be 2
+        var toon = "[2]{id,name}:\n  1\n  2,Bob"; // first row has 1 value, should be 2
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<TabularItem[]>(toon));
     }
 
@@ -781,32 +752,21 @@ public class ToonSerializerTests
     public void Deserialize_IndentationNotMultipleOfIndentSize_Throws()
     {
         // "A:" at depth 0, next line has 1 leading space (indentSize default 2)
-        var toon = """
-            A:
-             a: 1
-            """;
+        var toon = "A:\n a: 1";
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object>(toon));
     }
 
     [Fact]
     public void Deserialize_TabCharacterUsedForIndentation_Throws()
     {
-        var toon = """
-            A:
-            	B: 1
-            """; // tab at beginning of line
+        var toon = "A:\n\tB: 1"; // tab at beginning of line
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object>(toon));
     }
 
     [Fact]
     public void Deserialize_BlankLineInsideArrayRows_Throws()
     {
-        var toon = """
-            [2]:
-              a
-            
-              b
-            """; // blank line between rows
+        var toon = "[2]:\n  a\n\n  b"; // blank line between rows
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<string[]>(toon));
     }
 
@@ -872,11 +832,7 @@ public class ToonSerializerTests
     [Fact]
     public void Deserialize_ArraysOfArrays_ExpandedList_Parse()
     {
-        var toon = """
-            [2]:
-              - [2]: 1,2
-              - [2]: 3,4
-            """;
+        var toon = "[2]:\n  - [2]: 1,2\n  - [2]: 3,4";
         var result = ToonSerializer.Deserialize<int[][]>(toon);
         result.ShouldNotBeNull();
         result.Length.ShouldBe(2);
@@ -907,10 +863,7 @@ public class ToonSerializerTests
     public void Deserialize_HeaderDelimiterFieldMismatch_Throws()
     {
         // Declares pipe but uses comma in the fields segment
-        var toon = """
-            [1|]{a,b}:
-              x|y
-            """;
+        var toon = "[1|]{a,b}:\n  x|y";
         Should.Throw<FormatException>(() => ToonSerializer.Deserialize<object[]>(toon));
     }
 
