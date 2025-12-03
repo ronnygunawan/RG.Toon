@@ -899,14 +899,32 @@ key: value";
 
     public record ListWrapper
     {
-        public TabularItem[] Users { get; init; } = [];
+        public UserItem[] Users { get; init; } = [];
         public string Status { get; init; } = "";
+    }
+    
+    public record UserItem
+    {
+        [ToonPropertyName("id")]
+        public string Sku { get; init; } = "";
+        
+        [ToonPropertyName("name")]
+        public string Name { get; init; } = "";
     }
 
     public record RootWithData
     {
-        public TabularItem[] Data { get; init; } = [];
+        public DataItem[] Data { get; init; } = [];
         public string Key { get; init; } = "";
+    }
+    
+    public record DataItem
+    {
+        [ToonPropertyName("id")]
+        public string Id { get; init; } = "";
+        
+        [ToonPropertyName("name")]
+        public string Name { get; init; } = "";
     }
 
     public record UserDotNameHolder
