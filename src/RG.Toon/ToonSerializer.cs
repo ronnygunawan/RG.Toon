@@ -820,7 +820,7 @@ public static partial class ToonSerializer
                 if (trimmed.StartsWith("- "))
                 {
                     var itemContent = trimmed[2..];
-                    items.Add(ParseListItem(context, itemContent, elementType, 1));
+                    items.Add(ParseListItem(context, itemContent, elementType, itemDepth));
                 }
                 else
                 {
@@ -934,7 +934,7 @@ public static partial class ToonSerializer
             if (propsByName.TryGetValue(propName, out var arrayProp))
             {
                 var arrayHeader = key[bracketIndex..] + ":" + value;
-                var arrayValue = ParseArrayHeader(context, arrayHeader, arrayProp.PropertyType, depth);
+                var arrayValue = ParseArrayHeader(context, arrayHeader, arrayProp.PropertyType, depth + 1);
                 SetPropertyValue(obj, arrayProp, arrayValue);
             }
 
@@ -1280,7 +1280,7 @@ public static partial class ToonSerializer
                 if (trimmed.StartsWith("- "))
                 {
                     var itemContent = trimmed[2..];
-                    items.Add(ParseListItem(context, itemContent, elementType, depth + 1));
+                    items.Add(ParseListItem(context, itemContent, elementType, itemDepth));
                 }
                 else
                 {
