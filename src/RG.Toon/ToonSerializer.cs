@@ -780,7 +780,7 @@ public static partial class ToonSerializer
                 }
 
                 context.ReadLine();
-                var rowValues = ParseDelimitedValues(rowLine.Trim(), delimiter);
+                var rowValues = ParseDelimitedValues(trimmed, delimiter);
                 
                 // Strict-mode: validate row width matches field count
                 if (fields != null && rowValues.Count != fields.Count)
@@ -1240,7 +1240,7 @@ public static partial class ToonSerializer
                 }
 
                 context.ReadLine();
-                var rowValues = ParseDelimitedValues(rowLine.Trim(), delimiter);
+                var rowValues = ParseDelimitedValues(trimmed, delimiter);
                 
                 // Strict-mode: validate row width matches field count
                 if (fields != null && rowValues.Count != fields.Count)
