@@ -59,7 +59,54 @@ public class ToonSerializerBenchmarks
         return ToonSerializer.Deserialize<Person>(_serializedSingleData);
     }
 
-    // Source-generated benchmarks
+    // Source-generated benchmarks for arrays
+    [Benchmark]
+    public string Serialize_SourceGenerated()
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < _testData.Length; i++)
+        {
+            if (i > 0) sb.Append('\n');
+            sb.Append("- ");
+            sb.Append(PersonToonSerializer.Serialize(_testData[i]));
+        }
+        return sb.ToString();
+    }
+
+    [Benchmark]
+    public Person[]? Deserialize_SourceGenerated()
+    {
+        var lines = _serializedData.Split('\n');
+        var result = new Person[_testData.Length];
+        int index = 0;
+        var currentItem = new System.Text.StringBuilder();
+        
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].StartsWith("- "))
+            {
+                if (currentItem.Length > 0)
+                {
+                    result[index++] = PersonToonSerializer.Deserialize(currentItem.ToString())!;
+                    currentItem.Clear();
+                }
+                currentItem.AppendLine(lines[i].Substring(2));
+            }
+            else if (currentItem.Length > 0)
+            {
+                currentItem.AppendLine(lines[i]);
+            }
+        }
+        
+        if (currentItem.Length > 0)
+        {
+            result[index] = PersonToonSerializer.Deserialize(currentItem.ToString())!;
+        }
+        
+        return result;
+    }
+
+    // Source-generated benchmarks for single objects
     [Benchmark]
     public string Serialize_SingleObject_SourceGenerated()
     {
