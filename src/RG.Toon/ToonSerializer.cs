@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace RG.Toon;
@@ -1667,14 +1668,21 @@ public static partial class ToonSerializer
     private static IEnumerable<PropertyInfo> GetSerializableProperties(Type type)
     {
         return type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead && !p.GetCustomAttributes<ToonIgnoreAttribute>().Any())
+            .Where(p => p.CanRead && !p.GetCustomAttributes<ToonIgnoreAttribute>().Any() && !p.GetCustomAttributes<JsonIgnoreAttribute>().Any())
             .Where(p => p.GetIndexParameters().Length == 0);
     }
 
     private static string GetPropertyName(PropertyInfo prop)
     {
-        var attr = prop.GetCustomAttribute<ToonPropertyNameAttribute>();
-        return attr?.Name ?? prop.Name;
+        // ToonPropertyName takes precedence over JsonPropertyName
+        var toonAttr = prop.GetCustomAttribute<ToonPropertyNameAttribute>();
+        if (toonAttr is not null)
+        {
+            return toonAttr.Name;
+        }
+
+        var jsonAttr = prop.GetCustomAttribute<JsonPropertyNameAttribute>();
+        return jsonAttr?.Name ?? prop.Name;
     }
 
     private static void SetPropertyValue(object obj, PropertyInfo prop, object? value)

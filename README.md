@@ -40,8 +40,9 @@ var result = ToonSerializer.Deserialize<Item[]>(toon);
 - **Compact Format**: TOON uses tabular format for arrays of uniform objects, reducing redundancy
 - **Human-Readable**: Clean indentation-based syntax similar to YAML
 - **Full JSON Data Model Support**: Objects, arrays, strings, numbers, booleans, and null
-- **Custom Property Naming**: Use `[ToonPropertyName]` to customize serialized property names
-- **Property Ignoring**: Use `[ToonIgnore]` to exclude properties from serialization
+- **Custom Property Naming**: Use `[ToonPropertyName]` or `[JsonPropertyName]` to customize serialized property names
+- **Property Ignoring**: Use `[ToonIgnore]` or `[JsonIgnore]` to exclude properties from serialization
+- **System.Text.Json Compatibility**: Reuse existing DTOs with `System.Text.Json` attributes
 
 ## Format Examples
 
@@ -115,14 +116,29 @@ Items[2]{Sku,Qty,Price}:
 
 ## Attributes
 
-### ToonPropertyName
+RG.Toon supports both custom attributes (`ToonPropertyName`, `ToonIgnore`) and standard `System.Text.Json` attributes (`JsonPropertyName`, `JsonIgnore`), allowing you to reuse existing DTO classes.
 
-Use `[ToonPropertyName]` to customize the name of a property in the serialized output:
+### ToonPropertyName / JsonPropertyName
+
+Use `[ToonPropertyName]` or `[JsonPropertyName]` to customize the name of a property in the serialized output:
 
 ```csharp
+using RG.Toon;
+using System.Text.Json.Serialization;
+
+// Using ToonPropertyName
 public record Person
 {
     [ToonPropertyName("name")]
+    public required string PersonName { get; init; }
+    
+    public int Age { get; init; }
+}
+
+// Or using JsonPropertyName
+public record PersonDto
+{
+    [JsonPropertyName("name")]
     public required string PersonName { get; init; }
     
     public int Age { get; init; }
@@ -135,16 +151,33 @@ var toon = ToonSerializer.Serialize(person);
 // Age: 30
 ```
 
-### ToonIgnore
+**Note:** If both `[ToonPropertyName]` and `[JsonPropertyName]` are present on the same property, `[ToonPropertyName]` takes precedence.
 
-Use `[ToonIgnore]` to exclude a property from serialization:
+### ToonIgnore / JsonIgnore
+
+Use `[ToonIgnore]` or `[JsonIgnore]` to exclude a property from serialization:
 
 ```csharp
+using RG.Toon;
+using System.Text.Json.Serialization;
+
+// Using ToonIgnore
 public record User
 {
     public required string Name { get; init; }
     
     [ToonIgnore]
+    public string NormalizedName => Name.ToUpperInvariant();
+    
+    public int Age { get; init; }
+}
+
+// Or using JsonIgnore
+public record UserDto
+{
+    public required string Name { get; init; }
+    
+    [JsonIgnore]
     public string NormalizedName => Name.ToUpperInvariant();
     
     public int Age { get; init; }
@@ -157,6 +190,8 @@ var toon = ToonSerializer.Serialize(user);
 // Age: 30
 // (NormalizedName is not included)
 ```
+
+**Note:** Both `[ToonIgnore]` and `[JsonIgnore]` are respected. If either attribute is present on a property, it will be excluded from serialization.
 
 ## API Reference
 
