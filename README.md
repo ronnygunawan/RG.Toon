@@ -176,6 +176,47 @@ public static T? Deserialize<T>(string toon, int indentSize = 2);
 public static object? Deserialize(string toon, Type type, int indentSize = 2);
 ```
 
+## Performance
+
+RG.Toon includes both reflection-based and source-generated implementations:
+
+### Reflection-Based (Default)
+
+The library uses reflection by default for maximum flexibility and ease of use. This works with any type at runtime without requiring any additional setup.
+
+### Source-Generated (Experimental)
+
+For performance-critical scenarios, RG.Toon includes a source generator that can produce optimized serialization code at compile time. To use source generation:
+
+1. Add the `ToonSerializable` attribute to your types:
+
+```csharp
+[ToonSerializable]
+public class Person
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public int Age { get; set; }
+}
+```
+
+2. Use the generated serializer:
+
+```csharp
+// Generated code provides PersonToonSerializer class
+var toon = PersonToonSerializer.Serialize(person);
+var deserialized = PersonToonSerializer.Deserialize(toon);
+```
+
+### Benchmarks
+
+A benchmark project is included to compare reflection-based vs source-generated performance. To run benchmarks:
+
+```bash
+cd benchmarks/RG.Toon.Benchmarks
+dotnet run -c Release
+```
+
 ## Quoting Rules
 
 TOON follows specific quoting rules to maintain unambiguous parsing:

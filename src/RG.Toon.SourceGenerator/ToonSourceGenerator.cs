@@ -94,23 +94,39 @@ public sealed class ToonSerializableAttribute : System.Attribute
         sb.AppendLine($"    public static string Serialize({typeName} value, int indentSize = 2)");
         sb.AppendLine("    {");
         sb.AppendLine("        if (value == null) return \"null\";");
-        sb.AppendLine("        var sb = new System.Text.StringBuilder();");
-        sb.AppendLine("        var indent = new string(' ', 0);");
+        sb.AppendLine("        var builder = new System.Text.StringBuilder();");
         
         for (int i = 0; i < properties.Count; i++)
         {
             var prop = properties[i];
             if (i > 0)
             {
-                sb.AppendLine("        sb.Append('\\n');");
+                sb.AppendLine("        builder.Append('\\n');");
             }
-            sb.AppendLine("        sb.Append(indent);");
-            sb.AppendLine($"        sb.Append(\"{prop.ToonName}\");");
-            sb.AppendLine("        sb.Append(\": \");");
-            sb.AppendLine($"        sb.Append(RG.Toon.ToonSerializer.Serialize(value.{prop.PropertyName}));");
+            
+            // Check if property name needs quoting
+            var needsQuoting = !System.Text.RegularExpressions.Regex.IsMatch(prop.ToonName, "^[A-Za-z_][A-Za-z0-9_.]*$");
+            var keyName = needsQuoting ? $"\\\"{prop.ToonName}\\\"" : prop.ToonName;
+            
+            sb.AppendLine($"        builder.Append(\"{keyName}\");");
+            sb.AppendLine("        builder.Append(\": \");");
+            
+            // Generate optimized serialization for primitive types
+            sb.AppendLine($"        // Serialize {prop.PropertyName}");
+            sb.AppendLine($"        {{");
+            sb.AppendLine($"            var propValue = value.{prop.PropertyName};");
+            sb.AppendLine($"            if (propValue == null)");
+            sb.AppendLine($"            {{");
+            sb.AppendLine($"                builder.Append(\"null\");");
+            sb.AppendLine($"            }}");
+            sb.AppendLine($"            else");
+            sb.AppendLine($"            {{");
+            sb.AppendLine($"                builder.Append(RG.Toon.ToonSerializer.Serialize(propValue));");
+            sb.AppendLine($"            }}");
+            sb.AppendLine($"        }}");
         }
         
-        sb.AppendLine("        return sb.ToString();");
+        sb.AppendLine("        return builder.ToString();");
         sb.AppendLine("    }");
         sb.AppendLine();
     }
