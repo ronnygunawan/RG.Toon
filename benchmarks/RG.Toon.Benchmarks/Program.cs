@@ -17,6 +17,7 @@ public class ToonSerializerBenchmarks
 {
     private Person[] _testData = [];
     private string _serializedData = "";
+    private string _serializedSingleData = "";
 
     [GlobalSetup]
     public void Setup()
@@ -31,6 +32,7 @@ public class ToonSerializerBenchmarks
         };
 
         _serializedData = ToonSerializer.Serialize(_testData);
+        _serializedSingleData = ToonSerializer.Serialize(_testData[0]);
     }
 
     [Benchmark(Baseline = true)]
@@ -45,7 +47,6 @@ public class ToonSerializerBenchmarks
         return ToonSerializer.Deserialize<Person[]>(_serializedData);
     }
 
-    // Benchmarks for single object
     [Benchmark]
     public string Serialize_SingleObject_Reflection()
     {
@@ -55,11 +56,24 @@ public class ToonSerializerBenchmarks
     [Benchmark]
     public Person? Deserialize_SingleObject_Reflection()
     {
-        var serialized = ToonSerializer.Serialize(_testData[0]);
-        return ToonSerializer.Deserialize<Person>(serialized);
+        return ToonSerializer.Deserialize<Person>(_serializedSingleData);
+    }
+
+    // Source-generated benchmarks
+    [Benchmark]
+    public string Serialize_SingleObject_SourceGenerated()
+    {
+        return PersonToonSerializer.Serialize(_testData[0]);
+    }
+
+    [Benchmark]
+    public Person? Deserialize_SingleObject_SourceGenerated()
+    {
+        return PersonToonSerializer.Deserialize(_serializedSingleData);
     }
 }
 
+[ToonSerializable]
 public class Person
 {
     public int Id { get; set; }
