@@ -111,19 +111,8 @@ public sealed class ToonSerializableAttribute : System.Attribute
             sb.AppendLine($"        builder.Append(\"{keyName}\");");
             sb.AppendLine("        builder.Append(\": \");");
             
-            // Generate optimized serialization for primitive types
-            sb.AppendLine($"        // Serialize {prop.PropertyName}");
-            sb.AppendLine($"        {{");
-            sb.AppendLine($"            var propValue = value.{prop.PropertyName};");
-            sb.AppendLine($"            if (propValue == null)");
-            sb.AppendLine($"            {{");
-            sb.AppendLine($"                builder.Append(\"null\");");
-            sb.AppendLine($"            }}");
-            sb.AppendLine($"            else");
-            sb.AppendLine($"            {{");
-            sb.AppendLine($"                builder.Append(RG.Toon.ToonSerializer.Serialize(propValue));");
-            sb.AppendLine($"            }}");
-            sb.AppendLine($"        }}");
+            // Generate serialization - delegate to ToonSerializer for all types
+            sb.AppendLine($"        builder.Append(RG.Toon.ToonSerializer.Serialize(value.{prop.PropertyName}));");
         }
         
         sb.AppendLine("        return builder.ToString();");
