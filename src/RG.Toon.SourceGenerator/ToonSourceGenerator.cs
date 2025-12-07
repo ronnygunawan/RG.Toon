@@ -3,12 +3,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace RG.Toon.SourceGenerator;
 
 [Generator]
 public class ToonSourceGenerator : ISourceGenerator
 {
+    private static readonly Regex UnquotedKeyPattern = new Regex(@"^[A-Za-z_][A-Za-z0-9_.]*$", RegexOptions.Compiled);
     public void Initialize(GeneratorInitializationContext context)
     {
         context.RegisterForPostInitialization(postContext =>
@@ -105,7 +107,7 @@ public sealed class ToonSerializableAttribute : System.Attribute
             }
             
             // Check if property name needs quoting
-            var needsQuoting = !System.Text.RegularExpressions.Regex.IsMatch(prop.ToonName, "^[A-Za-z_][A-Za-z0-9_.]*$");
+            var needsQuoting = !UnquotedKeyPattern.IsMatch(prop.ToonName);
             var keyName = needsQuoting ? $"\\\"{prop.ToonName}\\\"" : prop.ToonName;
             
             sb.AppendLine($"        builder.Append(\"{keyName}\");");
