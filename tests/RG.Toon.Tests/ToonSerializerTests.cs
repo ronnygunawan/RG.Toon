@@ -249,6 +249,137 @@ public class ToonSerializerTests
         result.ShouldNotContain("NormalizedName: ADA");
     }
 
+    [Fact]
+    public void Serialize_JsonPropertyName_UsesCustomName()
+    {
+        var obj = new PersonWithJsonAttributes { Id = 1, Name = "Ada", InternalId = "internal-123", Age = 30 };
+        var result = ToonSerializer.Serialize(obj);
+        result.ShouldContain("full_name: Ada");
+        // Ensure the original property name is not used (checking for exact pattern)
+        result.ShouldNotContain("Name: Ada", Case.Sensitive);
+    }
+
+    [Fact]
+    public void Serialize_JsonIgnore_ExcludesProperty()
+    {
+        var obj = new PersonWithJsonAttributes { Id = 1, Name = "Ada", InternalId = "internal-123", Age = 30 };
+        var result = ToonSerializer.Serialize(obj);
+        result.ShouldNotContain("InternalId");
+        result.ShouldNotContain("internal-123");
+    }
+
+    [Fact]
+    public void Serialize_MixedAttributes_RespectsAll()
+    {
+        var obj = new PersonWithMixedAttributes 
+        { 
+            Id = 1, 
+            Name = "Ada", 
+            ToonIgnoredField = "toon-ignored",
+            JsonIgnoredField = "json-ignored",
+            Age = 30 
+        };
+        var result = ToonSerializer.Serialize(obj);
+        
+        // Should use JsonPropertyName for Name
+        result.ShouldContain("json_name: Ada");
+        // Ensure the original property name is not used (checking for exact pattern)
+        result.ShouldNotContain("Name: Ada", Case.Sensitive);
+        
+        // Should ignore both ToonIgnore and JsonIgnore fields
+        result.ShouldNotContain("ToonIgnoredField");
+        result.ShouldNotContain("toon-ignored");
+        result.ShouldNotContain("JsonIgnoredField");
+        result.ShouldNotContain("json-ignored");
+        
+        // Should include other properties
+        result.ShouldContain("Id: 1");
+        result.ShouldContain("Age: 30");
+    }
+
+    [Fact]
+    public void Serialize_BothPropertyNameAttributes_ToonPropertyNameTakesPrecedence()
+    {
+        var obj = new PersonWithBothPropertyNameAttributes { Id = 1, Name = "Ada", Age = 30 };
+        var result = ToonSerializer.Serialize(obj);
+        
+        // ToonPropertyName should take precedence
+        result.ShouldContain("toon_name: Ada");
+        // Ensure json_name is not used (checking for exact pattern with value)
+        result.ShouldNotContain("json_name: Ada", Case.Sensitive);
+        result.ShouldNotContain("Name: Ada", Case.Sensitive);
+    }
+
+    [Fact]
+    public void Deserialize_JsonPropertyName_UsesCustomName()
+    {
+        var toon = """
+            Id: 1
+            full_name: Ada
+            Age: 30
+            """;
+        var result = ToonSerializer.Deserialize<PersonWithJsonAttributes>(toon);
+        result.ShouldNotBeNull();
+        result.Id.ShouldBe(1);
+        result.Name.ShouldBe("Ada");
+        result.Age.ShouldBe(30);
+    }
+
+    [Fact]
+    public void RoundTrip_JsonAttributes_MaintainsData()
+    {
+        var original = new PersonWithJsonAttributes { Id = 1, Name = "Ada", InternalId = "internal-123", Age = 30 };
+        var toon = ToonSerializer.Serialize(original);
+        var deserialized = ToonSerializer.Deserialize<PersonWithJsonAttributes>(toon);
+        
+        deserialized.ShouldNotBeNull();
+        deserialized.Id.ShouldBe(original.Id);
+        deserialized.Name.ShouldBe(original.Name);
+        deserialized.Age.ShouldBe(original.Age);
+        // InternalId is JsonIgnored, so it won't roundtrip
+    }
+
+    [Fact]
+    public void RoundTrip_MixedAttributes_MaintainsData()
+    {
+        var original = new PersonWithMixedAttributes 
+        { 
+            Id = 1, 
+            Name = "Ada", 
+            ToonIgnoredField = "toon-ignored",
+            JsonIgnoredField = "json-ignored",
+            Age = 30 
+        };
+        var toon = ToonSerializer.Serialize(original);
+        var deserialized = ToonSerializer.Deserialize<PersonWithMixedAttributes>(toon);
+        
+        deserialized.ShouldNotBeNull();
+        deserialized.Id.ShouldBe(original.Id);
+        deserialized.Name.ShouldBe(original.Name);
+        deserialized.Age.ShouldBe(original.Age);
+        // Ignored fields won't roundtrip
+    }
+
+    [Fact]
+    public void Serialize_TabularArray_WithJsonAttributes()
+    {
+        var items = new[]
+        {
+            new PersonWithJsonAttributes { Id = 1, Name = "Alice", InternalId = "int-1", Age = 25 },
+            new PersonWithJsonAttributes { Id = 2, Name = "Bob", InternalId = "int-2", Age = 30 }
+        };
+        var result = ToonSerializer.Serialize(items);
+        
+        // Should be tabular format with custom property names
+        result.ShouldContain("[2]{Id,full_name,Age}:");
+        result.ShouldContain("1,Alice,25");
+        result.ShouldContain("2,Bob,30");
+        // Should not include ignored property
+        result.ShouldNotContain("InternalId");
+        result.ShouldNotContain("int-1");
+        result.ShouldNotContain("int-2");
+    }
+
     #endregion
 
     #region Deserialization Tests
